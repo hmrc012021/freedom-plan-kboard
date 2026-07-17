@@ -9,7 +9,7 @@ import Roster from '@/pages/Roster';
 import Simulate from '@/pages/Simulate';
 import Predictability from '@/pages/Predictability';
 
-type AccessState = 'checking' | 'authorized' | 'unauthorized';
+type AccessState = 'checking' | 'authorized' | 'unauthorized' | 'error';
 
 export default function App() {
   const lookupsStatus = useLookupsStore((s) => s.status);
@@ -18,6 +18,7 @@ export default function App() {
 
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [access, setAccess] = useState<AccessState>('checking');
+  const [accessError, setAccessError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -39,8 +40,13 @@ export default function App() {
       .select('role')
       .eq('user_id', session.user.id)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (cancelled) return;
+        if (error) {
+          setAccessError(error.message);
+          setAccess('error');
+          return;
+        }
         setAccess(data ? 'authorized' : 'unauthorized');
       });
     return () => {
@@ -68,6 +74,17 @@ export default function App() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg text-text-muted">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-k border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (access === 'error') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg px-6">
+        <div className="max-w-md rounded-lg border border-line bg-bg-elevated p-6 text-center">
+          <p className="mb-2 font-display font-semibold text-k">Couldn't check access</p>
+          <p className="text-sm text-text-muted">{accessError}</p>
+        </div>
       </div>
     );
   }
