@@ -136,8 +136,15 @@ function PostMortemRow({ row }: { row: EnrichedSlateRow }) {
   const kDiff = isFinal && row.projected_strikeouts !== null ? row.actual_k! - row.projected_strikeouts : null;
 
   return (
-    <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex min-w-0 items-center gap-3 sm:w-56 sm:shrink-0">
+    // Grid, not flex-with-justify-between: with flex, an optional 3rd item
+    // (the notes line) shared the same row as the stats block and competed
+    // with it for width, so the stats column landed in a different spot on
+    // every row depending on whether that pitcher happened to have notes.
+    // A fixed name|stats column pair keeps every row's columns aligned
+    // regardless of what's below them; notes get their own full-width grid
+    // row so they never affect horizontal layout at all.
+    <div className="grid grid-cols-1 gap-2 px-4 py-3.5 sm:grid-cols-[14rem_1fr] sm:items-center sm:gap-x-4 sm:gap-y-2">
+      <div className="flex min-w-0 items-center gap-3">
         <div className="relative shrink-0">
           <PitcherPhoto playerId={row.pitcher_id} name={row.pitcher_name} size="md" />
           <div className="absolute -bottom-1 -right-1">
@@ -152,7 +159,7 @@ function PostMortemRow({ row }: { row: EnrichedSlateRow }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 items-center gap-x-3 gap-y-2 sm:flex sm:flex-nowrap sm:gap-x-6 sm:gap-y-0">
+      <div className="grid grid-cols-3 items-center gap-x-3 gap-y-2 sm:flex sm:flex-nowrap sm:justify-end sm:gap-x-6 sm:gap-y-0">
         <StatPair label="Batters Faced" predicted={roundedCount(row.projected_batters_faced)} actual={isFinal ? roundedCount(row.actual_batters_faced) : '—'} />
         <StatPair label="Strikeouts" predicted={fmt(row.projected_strikeouts, 1)} actual={isFinal ? String(row.actual_k) : '—'} />
 
@@ -188,7 +195,7 @@ function PostMortemRow({ row }: { row: EnrichedSlateRow }) {
       </div>
 
       {isFinal && row._postMortemNotes && row._postMortemNotes.length > 0 && (
-        <div className="text-[11.5px] leading-relaxed text-text-muted sm:basis-full">{row._postMortemNotes.join(' · ')}</div>
+        <div className="text-[11.5px] leading-relaxed text-text-muted sm:col-span-2">{row._postMortemNotes.join(' · ')}</div>
       )}
     </div>
   );
