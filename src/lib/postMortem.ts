@@ -43,10 +43,20 @@ export function deriveOutingNotes(row: OutingForPostMortem): string[] {
 // 'Injury' is a real category with no automatic detection yet (no injury
 // signal exists in the current schema) -- kept in the type so it can be
 // wired up later (manual tagging, an external feed) without a shape change.
-export type OutingReason = 'Short outing' | 'Low strikeout rate' | 'Pitch count limitation' | 'Injury' | 'Unknown';
+export type OutingReason =
+  | 'Exceeded projection'
+  | 'As projected'
+  | 'Short outing'
+  | 'Pitch count limitation'
+  | 'Got hit hard'
+  | 'Command issues'
+  | 'Low strikeout rate'
+  | 'Injury'
+  | 'Unknown';
 
 const HIGH_PITCHES_PER_OUT = 5.2; // a full, unlabored start runs roughly 3.8-4.2 pitches/out
 const LOW_K_GAP = 2.5; // projected minus actual K, for a normal-length outing that just didn't miss bats
+const NORMAL_K_MISS = 1.5; // within this many K of projection either way counts as "as expected"
 
 export interface OutingForReason {
   actual_batters_faced: number | null;
@@ -55,8 +65,17 @@ export interface OutingForReason {
   actual_k: number | null;
   outs_recorded: number | null;
   pitches: number | null;
+  earned_runs: number | null;
+  walks: number | null;
+  home_runs: number | null;
 }
 
+// Checked in order: first whether the pitcher simply beat or matched the
+// number (nothing to explain), then the strongest, most specific causes of
+// an underperformance (why he left early), then the damage/control signals
+// deriveOutingNotes already surfaces as free text, then a generic K-gap
+// fallback. 'Unknown' should now only hit outings with a real, unexplained
+// miss -- not just any outing missing one specific signal.
 export function classifyOutingReason(row: OutingForReason): OutingReason {
   const {
     actual_batters_faced: bf,
@@ -65,7 +84,14 @@ export function classifyOutingReason(row: OutingForReason): OutingReason {
     actual_k: k,
     outs_recorded: outs,
     pitches,
+    earned_runs: er,
+    walks: bb,
+    home_runs: hr,
   } = row;
+
+  const kDiff = proj !== null && k !== null ? k - proj : null;
+
+  if (kDiff !== null && kDiff >= NORMAL_K_MISS) return 'Exceeded projection';
 
   const isShort = bf !== null && avgBf !== null && avgBf > 0 && bf < avgBf * SHORT_OUTING_BF_RATIO;
 
@@ -76,7 +102,13 @@ export function classifyOutingReason(row: OutingForReason): OutingReason {
 
   if (isShort) return 'Short outing';
 
-  if (proj !== null && k !== null && proj - k >= LOW_K_GAP) return 'Low strikeout rate';
+  if ((er !== null && er >= HIGH_EARNED_RUNS) || (hr !== null && hr >= 2)) return 'Got hit hard';
+
+  if (bb !== null && bb >= HIGH_WALKS) return 'Command issues';
+
+  if (kDiff !== null && kDiff <= -LOW_K_GAP) return 'Low strikeout rate';
+
+  if (kDiff !== null && Math.abs(kDiff) < NORMAL_K_MISS) return 'As projected';
 
   return 'Unknown';
 }

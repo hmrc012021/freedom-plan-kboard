@@ -50,6 +50,9 @@ export function usePostMortemEnrichedRows(
             actual_k: r.actual_k,
             outs_recorded: detail.outs_recorded,
             pitches: detail.pitches,
+            earned_runs: detail.earned_runs,
+            walks: detail.walks,
+            home_runs: detail.home_runs,
           }),
         };
       }),

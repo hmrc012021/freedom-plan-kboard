@@ -10,6 +10,19 @@ import { teamLabel } from '@/lib/kboardData';
 import { usePredictabilityEnrichedRows } from '@/lib/usePredictability';
 import { usePostMortemEnrichedRows } from '@/lib/usePostMortem';
 import type { EnrichedSlateRow } from '@/types/slate';
+import type { OutingReason } from '@/lib/postMortem';
+
+const REASON_BADGE_CLASSES: Record<OutingReason, string> = {
+  'Exceeded projection': 'bg-hit/15 text-hit',
+  'As projected': 'bg-bg-elevated-2 text-text-muted',
+  'Short outing': 'bg-amber/15 text-amber',
+  'Pitch count limitation': 'bg-amber/15 text-amber',
+  'Command issues': 'bg-amber/15 text-amber',
+  'Low strikeout rate': 'bg-amber/15 text-amber',
+  'Got hit hard': 'bg-danger/15 text-danger',
+  Injury: 'bg-danger/15 text-danger',
+  Unknown: 'bg-bg-elevated-2 text-text-muted',
+};
 
 // Deliberately NOT the game-grouped MatchupBoard used by Today's Board and
 // Predictability -- this page answers a different question ("how did my
@@ -131,7 +144,9 @@ function PostMortemRow({ row }: { row: EnrichedSlateRow }) {
         <div className="min-w-[120px] text-right">
           <div className="text-[9px] uppercase tracking-wide text-text-muted">Reason</div>
           {isFinal ? (
-            <span className="inline-block rounded-full bg-bg-elevated-2 px-2 py-0.5 font-display text-[10px] uppercase tracking-wide text-text">
+            <span
+              className={`inline-block rounded-full px-2 py-0.5 font-display text-[10px] uppercase tracking-wide ${REASON_BADGE_CLASSES[row._postMortemReason ?? 'Unknown']}`}
+            >
               {row._postMortemReason ?? 'Unknown'}
             </span>
           ) : (
