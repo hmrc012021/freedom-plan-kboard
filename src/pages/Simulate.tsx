@@ -5,10 +5,11 @@ import { TeamBadge } from '@/components/ui/TeamBadge';
 import { useSimulateStore } from '@/store/useSimulateStore';
 import { useLookupsStore } from '@/store/useLookupsStore';
 import { useEasternSlate } from '@/lib/useEasternSlate';
-import { defaultEasternDate, fmt, roundedCount, signed, deltaClass, parseUtcTimestamp } from '@/lib/format';
+import { defaultEasternDate, fmt, roundedCount, signed, deltaClass, formatGameTime } from '@/lib/format';
 import { teamLabel } from '@/lib/kboardData';
 import { usePredictabilityEnrichedRows } from '@/lib/usePredictability';
 import { usePostMortemEnrichedRows } from '@/lib/usePostMortem';
+import { groupRowsByGame } from '@/components/matchup/GameCard';
 import type { EnrichedSlateRow } from '@/types/slate';
 import type { OutingReason } from '@/lib/postMortem';
 
@@ -43,12 +44,7 @@ export default function Simulate() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedDate, status, historyBundle]);
 
-  const sorted = [...enrichedRows].sort((a, b) => {
-    const ta = parseUtcTimestamp(a.game_datetime_utc)?.getTime() ?? Infinity;
-    const tb = parseUtcTimestamp(b.game_datetime_utc)?.getTime() ?? Infinity;
-    if (ta !== tb) return ta - tb;
-    return (a.home_away === 'away' ? 0 : 1) - (b.home_away === 'away' ? 0 : 1);
-  });
+  const games = groupRowsByGame(enrichedRows);
 
   return (
     <AppShell title="Simulation / Post-Mortem">
@@ -81,19 +77,55 @@ export default function Simulate() {
       {loadedDate !== null && status === 'error' && (
         <div className="py-10 text-center text-sm text-text-muted">Couldn't load slate: {error}</div>
       )}
-      {loadedDate !== null && status === 'ready' && sorted.length === 0 && (
+      {loadedDate !== null && status === 'ready' && games.length === 0 && (
         <div className="py-10 text-center text-sm text-text-muted">
           No starters found for this Eastern-date slate — no probable snapshot was captured and no games are Final for it.
         </div>
       )}
-      {loadedDate !== null && status === 'ready' && sorted.length > 0 && (
-        <div className="space-y-2">
-          {sorted.map((r) => (
-            <PostMortemRow key={r.pitcher_id} row={r} />
+      {loadedDate !== null && status === 'ready' && games.length > 0 && (
+        <div className="space-y-3">
+          {games.map(([gamePk, starters]) => (
+            <PostMortemGameGroup key={gamePk} starters={starters} />
           ))}
         </div>
       )}
     </AppShell>
+  );
+}
+
+// One bordered group per game, holding both starters -- the pitchers who
+// actually faced off should read as a pair, not as two unrelated rows that
+// happen to sit near each other in a flat chronological list.
+function PostMortemGameGroup({ starters }: { starters: EnrichedSlateRow[] }) {
+  const teamsById = useLookupsStore((s) => s.lookups!.teamsById);
+
+  const sorted = [...starters].sort((a, b) => {
+    const order: Record<string, number> = { away: 0, home: 1 };
+    return (order[a.home_away ?? ''] ?? 2) - (order[b.home_away ?? ''] ?? 2);
+  });
+  const away = sorted.find((s) => s.home_away === 'away');
+  const home = sorted.find((s) => s.home_away === 'home');
+  const matchupLabel =
+    away && home
+      ? `${teamLabel(teamsById, away.team_id)} @ ${teamLabel(teamsById, home.team_id)}`
+      : sorted.map((s) => teamLabel(teamsById, s.team_id)).join(' vs ');
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-line bg-bg-elevated shadow-md shadow-black/20">
+      <div className="flex items-center justify-between border-b border-line bg-bg-elevated-2 px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          {away && <TeamBadge abbreviation={teamsById.get(away.team_id)?.abbreviation} teamId={away.team_id} size="sm" />}
+          <span className="font-display text-[13px] font-semibold uppercase tracking-wide text-text">{matchupLabel}</span>
+          {home && <TeamBadge abbreviation={teamsById.get(home.team_id)?.abbreviation} teamId={home.team_id} size="sm" />}
+        </div>
+        <span className="font-mono-num text-xs text-text-muted">{formatGameTime(sorted[0]?.game_datetime_utc)}</span>
+      </div>
+      <div className="divide-y divide-line">
+        {sorted.map((r) => (
+          <PostMortemRow key={r.pitcher_id} row={r} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -104,7 +136,7 @@ function PostMortemRow({ row }: { row: EnrichedSlateRow }) {
   const kDiff = isFinal && row.projected_strikeouts !== null ? row.actual_k! - row.projected_strikeouts : null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-line bg-bg-elevated px-4 py-3.5 shadow-md shadow-black/20 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-3 sm:w-56 sm:shrink-0">
         <div className="relative shrink-0">
           <PitcherPhoto playerId={row.pitcher_id} name={row.pitcher_name} size="md" />
