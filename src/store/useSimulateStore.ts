@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import type { ScoredHistoryBundle } from '@/lib/kboardData';
-import type { EnrichedSlateRow } from '@/components/matchup/StarterRow';
+import type { EnrichedSlateRow } from '@/types/slate';
 
-// Predictability is slate-linked: it evaluates whichever date was last loaded
-// on the Simulate / Day Slate tab, matching the original app's shared globals.
+// Shared cache of the last-loaded slate date, written by both Simulate and
+// Predictability (each fetches independently) so revisiting either tab with
+// the same date doesn't require a full reload.
 interface SimulateStore {
   date: string | null;
   rows: EnrichedSlateRow[];

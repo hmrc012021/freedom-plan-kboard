@@ -66,6 +66,13 @@ export function recentHistoryForBattingTeam(historyRows: ScoredHistoryRow[], tea
     .reverse();
 }
 
+export const BADGE_CLASSES: Record<'high' | 'medium' | 'low' | 'unknown', string> = {
+  high: 'bg-hit/15 text-hit',
+  medium: 'bg-amber/15 text-amber',
+  low: 'bg-k/15 text-k',
+  unknown: 'bg-bg-elevated-2 text-text-muted',
+};
+
 export interface PredictabilityResult {
   recent: ScoredHistoryRow[];
   n: number;

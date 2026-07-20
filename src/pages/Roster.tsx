@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AppShell } from '@/components/layout/AppShell';
 import { PitcherModal } from '@/components/PitcherModal';
+import { TeamBadge } from '@/components/ui/TeamBadge';
 import { supabase } from '@/lib/supabaseClient';
 import { avgBfDisplay } from '@/lib/kboardData';
 import { useLookupsStore } from '@/store/useLookupsStore';
@@ -78,9 +79,12 @@ export default function Roster() {
     };
   }, [teamId, lookups]);
 
+  const selectedTeam = teamId ? lookups.teamsById.get(Number(teamId)) : undefined;
+
   return (
-    <AppShell title="Team Roster">
+    <AppShell title="Lineup Lab">
       <div className="mb-4 flex items-center gap-3.5">
+        {selectedTeam && <TeamBadge abbreviation={selectedTeam.abbreviation} teamId={selectedTeam.team_id} size="lg" />}
         <label className="text-xs uppercase tracking-wide text-text-muted" htmlFor="team-select">
           Team
         </label>

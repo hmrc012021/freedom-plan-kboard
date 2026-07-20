@@ -5,17 +5,20 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --color-bg: #12181B;
-  --color-bg-elevated: #1B2327;
-  --color-bg-elevated-2: #20292E;
-  --color-line: #2A3236;
-  --color-text: #F1EDE4;
-  --color-text-muted: #8A9296;
+  --color-bg: #0A0E17;
+  --color-bg-elevated: #121826;
+  --color-bg-elevated-2: #1A2233;
+  --color-line: #232C40;
+  --color-text: #EEF2F8;
+  --color-text-muted: #7C8AA8;
 
-  /* Signature K accent (pink), plus hit (green) and amber for source/status badges. */
-  --color-k: #EC4899;
-  --color-hit: #5FA777;
-  --color-amber: #D9A441;
+  /* Signature K accent (green), hit (brighter green) for positive deltas,
+     amber for source/status badges, danger for errors and negative deltas
+     -- kept distinct from the accent so a "miss" never reads as brand-colored. */
+  --color-k: #22C55E;
+  --color-hit: #4ADE80;
+  --color-amber: #F0A93C;
+  --color-danger: #F0505A;
 }
 
 :root {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchSlateRowsForEasternDate, loadScoredHistory, enrichSlateRowsWithHistory } from '@/lib/kboardData';
 import { useLookupsStore } from '@/store/useLookupsStore';
 import type { ScoredHistoryBundle } from '@/lib/kboardData';
-import type { EnrichedSlateRow } from '@/components/matchup/StarterRow';
+import type { EnrichedSlateRow } from '@/types/slate';
 
 interface SlateState {
   status: 'idle' | 'loading' | 'ready' | 'error';

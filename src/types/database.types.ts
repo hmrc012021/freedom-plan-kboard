@@ -196,6 +196,10 @@ export interface SlateRow {
   projected_batters_faced: number | null;
   actual_k: number | null;
   actual_batters_faced: number | null;
+  // Present in the RPC's raw JSON response (mlb.simulate_slate_for_date)
+  // but previously undeclared here -- no backend change, just exposing what
+  // was already on the wire for the Raw Estimator breakdown.
+  adjustment: number | null;
   // Legacy fallback fields (pre-history-enrichment), kept optional since the
   // client prefers the _pitcherHistory/_opponentHistory enrichment when present.
   pitcher_recent_k_list?: number[];

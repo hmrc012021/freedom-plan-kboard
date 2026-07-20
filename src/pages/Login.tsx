@@ -68,7 +68,7 @@ export default function Login() {
             />
           </label>
 
-          {error && <p className="text-sm text-k">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           {signedUpMessage && (
             <p className="text-sm text-text-muted">
               Account created. If email confirmation is required, check your inbox, then sign in below.

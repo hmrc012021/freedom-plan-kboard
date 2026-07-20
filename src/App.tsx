@@ -8,6 +8,8 @@ import Today from '@/pages/Today';
 import Roster from '@/pages/Roster';
 import Simulate from '@/pages/Simulate';
 import Predictability from '@/pages/Predictability';
+import Settings from '@/pages/Settings';
+import MatchupPage from '@/pages/MatchupPage';
 
 type AccessState = 'checking' | 'authorized' | 'unauthorized' | 'error';
 
@@ -82,7 +84,7 @@ export default function App() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg px-6">
         <div className="max-w-md rounded-lg border border-line bg-bg-elevated p-6 text-center">
-          <p className="mb-2 font-display font-semibold text-k">Couldn't check access</p>
+          <p className="mb-2 font-display font-semibold text-danger">Couldn't check access</p>
           <p className="text-sm text-text-muted">{accessError}</p>
         </div>
       </div>
@@ -93,7 +95,7 @@ export default function App() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg px-6">
         <div className="max-w-md rounded-lg border border-line bg-bg-elevated p-6 text-center">
-          <p className="mb-2 font-display font-semibold text-k">No access yet</p>
+          <p className="mb-2 font-display font-semibold text-amber">No access yet</p>
           <p className="text-sm text-text-muted">
             You're signed in as {session.user.email}, but this account hasn't been granted access to K-Board.
             Ask the owner to add you.
@@ -124,7 +126,7 @@ export default function App() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg px-6">
         <div className="max-w-md rounded-lg border border-line bg-bg-elevated p-6 text-center">
-          <p className="mb-2 font-display font-semibold text-k">Couldn't load K-Board</p>
+          <p className="mb-2 font-display font-semibold text-danger">Couldn't load K-Board</p>
           <p className="text-sm text-text-muted">{lookupsError}</p>
         </div>
       </div>
@@ -138,6 +140,8 @@ export default function App() {
         <Route path="/roster" element={<Roster />} />
         <Route path="/simulate" element={<Simulate />} />
         <Route path="/predictability" element={<Predictability />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/matchup/:gamePk" element={<MatchupPage />} />
       </Routes>
     </HashRouter>
   );

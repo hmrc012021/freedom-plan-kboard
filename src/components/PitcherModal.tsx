@@ -140,7 +140,7 @@ export function PitcherModal({ pitcherId, onClose }: { pitcherId: number; onClos
                 </div>
                 <div>
                   <div className="text-[11px] uppercase tracking-wide text-text-muted">Under {line.toFixed(1)}</div>
-                  <div className="font-mono-num text-xl font-bold text-k">
+                  <div className="font-mono-num text-xl font-bold text-amber">
                     {underCount}/{starts.length} ({Math.round((underCount / starts.length) * 100)}%)
                   </div>
                 </div>

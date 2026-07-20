@@ -112,6 +112,11 @@ interface ActualRow {
   is_starter: boolean | null;
   is_opener: boolean | null;
   opponent_team_id: number | null;
+  // Joined so scored-history rows can be deduped against the real game
+  // date -- some ingestion runs have written more than one
+  // daily_pitcher_projections row (different projection_date) for the
+  // same real game, which would otherwise double-count that start.
+  games: { game_date: string } | { game_date: string }[] | null;
 }
 
 export async function loadScoredHistory(beforeDate: string, playersById: Map<number, PlayerRow>): Promise<ScoredHistoryBundle> {
@@ -133,11 +138,11 @@ export async function loadScoredHistory(beforeDate: string, playersById: Map<num
     const actuals = await selectByInChunks<ActualRow, number>(gamePks, (chunk) =>
       supabase
         .from('pitcher_outings')
-        .select('game_pk,pitcher_id,strikeouts,batters_faced,is_starter,is_opener,opponent_team_id')
+        .select('game_pk,pitcher_id,strikeouts,batters_faced,is_starter,is_opener,opponent_team_id,games(game_date)')
         .in('game_pk', chunk)
     );
     const actualMap = new Map(actuals.map((a) => [`${a.game_pk}:${a.pitcher_id}`, a]));
-    const rows: ScoredHistoryRow[] = projections
+    const candidates: ScoredHistoryRow[] = projections
       .map((p): ScoredHistoryRow | null => {
         const actual = actualMap.get(`${p.game_pk}:${p.pitcher_id}`);
         if (!actual || actual.strikeouts === null || p.projected_strikeouts === null) return null;
@@ -152,8 +157,27 @@ export async function loadScoredHistory(beforeDate: string, playersById: Map<num
           residual: Number(actual.strikeouts) - Number(p.projected_strikeouts),
         };
       })
-      .filter((r): r is ScoredHistoryRow => r !== null)
-      .sort((a, b) => a.projection_date.localeCompare(b.projection_date));
+      .filter((r): r is ScoredHistoryRow => r !== null);
+
+    // Some ingestion runs have written more than one projection row for
+    // the same real game (a stray day-off projection_date). Keep exactly
+    // one scored row per game_pk:pitcher_id -- prefer whichever row's
+    // projection_date matches the real game date, else keep the first.
+    const byStart = new Map<string, ScoredHistoryRow>();
+    for (const r of candidates) {
+      const key = `${r.game_pk}:${r.pitcher_id}`;
+      const existing = byStart.get(key);
+      if (!existing) {
+        byStart.set(key, r);
+        continue;
+      }
+      const actual = actualMap.get(key);
+      const gameDate = actual ? (Array.isArray(actual.games) ? actual.games[0]?.game_date : actual.games?.game_date) : undefined;
+      if (gameDate && r.projection_date === gameDate && existing.projection_date !== gameDate) {
+        byStart.set(key, r);
+      }
+    }
+    const rows: ScoredHistoryRow[] = [...byStart.values()].sort((a, b) => a.projection_date.localeCompare(b.projection_date));
     return { startDate, beforeDate, rows, metrics: computeModelMetrics(rows) };
   })();
 
@@ -183,6 +207,26 @@ export function enrichSlateRowsWithHistory<T extends { pitcher_id: number; oppon
       .slice(0, 5)
       .reverse(),
   }));
+}
+
+export interface OutingDetail {
+  game_pk: number;
+  pitcher_id: number;
+  earned_runs: number | null;
+  walks: number | null;
+  home_runs: number | null;
+  outs_recorded: number | null;
+  pitches: number | null;
+}
+
+export async function fetchOutingDetails(gamePks: number[]): Promise<Map<string, OutingDetail>> {
+  const rows = await selectByInChunks<OutingDetail, number>(gamePks, (chunk) =>
+    supabase
+      .from('pitcher_outings')
+      .select('game_pk,pitcher_id,earned_runs,walks,home_runs,outs_recorded,pitches')
+      .in('game_pk', chunk)
+  );
+  return new Map(rows.map((r) => [`${r.game_pk}:${r.pitcher_id}`, r]));
 }
 
 export async function fetchSlateRowsForEasternDate(dateStr: string): Promise<SlateRow[]> {
