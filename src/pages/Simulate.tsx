@@ -152,7 +152,7 @@ function PostMortemRow({ row }: { row: EnrichedSlateRow }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:flex-nowrap">
+      <div className="grid grid-cols-3 items-center gap-x-3 gap-y-2 sm:flex sm:flex-nowrap sm:gap-x-6 sm:gap-y-0">
         <StatPair label="Batters Faced" predicted={roundedCount(row.projected_batters_faced)} actual={isFinal ? roundedCount(row.actual_batters_faced) : '—'} />
         <StatPair label="Strikeouts" predicted={fmt(row.projected_strikeouts, 1)} actual={isFinal ? String(row.actual_k) : '—'} />
 
@@ -173,7 +173,7 @@ function PostMortemRow({ row }: { row: EnrichedSlateRow }) {
           </div>
         </div>
 
-        <div className="min-w-[120px] text-right">
+        <div className="col-span-3 text-left sm:col-span-1 sm:min-w-[120px] sm:text-right">
           <div className="text-[9px] uppercase tracking-wide text-text-muted">Reason</div>
           {isFinal ? (
             <span
