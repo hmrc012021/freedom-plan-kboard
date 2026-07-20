@@ -51,7 +51,7 @@ export function PitcherModal({ pitcherId, onClose }: { pitcherId: number; onClos
         })
         .sort((a, b) => (a.date < b.date ? 1 : -1));
       setStarts(rows);
-      if (rows.length) setLine(Math.round((Math.max(...rows.map((s) => s.k), 10) / 2) * 2) / 2);
+      if (rows.length) setLine(Math.round(Math.max(...rows.map((s) => s.k), 10) / 2));
     }
     void load();
     return () => {
@@ -60,7 +60,11 @@ export function PitcherModal({ pitcherId, onClose }: { pitcherId: number; onClos
   }, [pitcherId, lookups]);
 
   const maxK = starts ? Math.max(...starts.map((s) => s.k), 10) : 10;
-  const overCount = starts ? starts.filter((s) => s.k > line).length : 0;
+  // A start with exactly `line` strikeouts counts as hitting the over --
+  // nobody throws a fractional strikeout, so with whole-number lines
+  // "over 5" has to mean "5 or more," not "more than 5" (which would
+  // make a line of exactly 5 unhittable by the most common outcome).
+  const overCount = starts ? starts.filter((s) => s.k >= line).length : 0;
   const underCount = starts ? starts.length - overCount : 0;
 
   return (
@@ -122,24 +126,24 @@ export function PitcherModal({ pitcherId, onClose }: { pitcherId: number; onClos
               <div className="flex items-center gap-3.5">
                 <input
                   type="range"
-                  min={0.5}
-                  max={maxK + 1.5}
-                  step={0.5}
+                  min={1}
+                  max={maxK + 2}
+                  step={1}
                   value={line}
                   onChange={(e) => setLine(Number(e.target.value))}
                   className="flex-1 accent-k"
                 />
-                <div className="min-w-[64px] text-right font-mono-num text-lg font-bold text-text">{line.toFixed(1)}</div>
+                <div className="min-w-[64px] text-right font-mono-num text-lg font-bold text-text">{line}</div>
               </div>
               <div className="mt-3.5 flex flex-wrap gap-4">
                 <div>
-                  <div className="text-[11px] uppercase tracking-wide text-text-muted">Over {line.toFixed(1)}</div>
+                  <div className="text-[11px] uppercase tracking-wide text-text-muted">Over {line}</div>
                   <div className="font-mono-num text-xl font-bold text-hit">
                     {overCount}/{starts.length} ({Math.round((overCount / starts.length) * 100)}%)
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase tracking-wide text-text-muted">Under {line.toFixed(1)}</div>
+                  <div className="text-[11px] uppercase tracking-wide text-text-muted">Under {line}</div>
                   <div className="font-mono-num text-xl font-bold text-amber">
                     {underCount}/{starts.length} ({Math.round((underCount / starts.length) * 100)}%)
                   </div>
